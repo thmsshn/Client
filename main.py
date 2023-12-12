@@ -88,6 +88,7 @@ def Receiver(hero1, client_socket, prevGS):
         data, client_address = client_socket.recvfrom(1024)
         message = data.decode('utf-8')
         W = message.split(" ")
+        print(message)
         Gs = GameState(W[1], W[2], W[3], W[4], W[5])
         if int(W[0]) == 0:
             hero1.interpolate_coordinates(prevGS.Pl2X, prevGS.Pl2Y, Gs.Pl2X, Gs.Pl2Y, prevGS.TimeStamp, Gs.TimeStamp)
@@ -117,7 +118,7 @@ def main(screen, weight, height):
     server_host = "127.0.0.1"
     server_port = 12345
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    client_socket.bind(("0.0.0.0", 50001))
+    client_socket.bind(("0.0.0.0", 50003))
     Client = UDPClient(server_host, server_port, client_socket)
 
     entities = pygame.sprite.Group()
@@ -264,11 +265,16 @@ class Button:
 
 
 def main_menu(green_button, screen, screen_weight, red_button, screen_height):
+    interimage = pygame.image.load('ZastaVka.jpg').convert_alpha()
+    interimage = pygame.transform.scale(interimage,[screen_weight,screen_height])
+    interimageRect = interimage.get_rect()
+
     running = True
     i = 0
     clock = pygame.time.Clock()
     while running:
         screen.fill((0, 0, 0))
+        screen.blit(interimage, interimageRect)
         # label = pygame.font.Font(None, 72)
         # text_surface = label.render("babushka", True, [255, 255, 255])
         # text_rect = text_surface.get_rect(center=(screen_weight/2, 50))
@@ -282,7 +288,6 @@ def main_menu(green_button, screen, screen_weight, red_button, screen_height):
 
             green_button.green_handle_event(event, screen, screen_weight, screen_height)
             red_button.red_handle_event(event)
-
         green_button.check_hover(pygame.mouse.get_pos())
         green_button.draw(screen)
         red_button.check_hover(pygame.mouse.get_pos())
