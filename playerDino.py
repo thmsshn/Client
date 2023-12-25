@@ -1,25 +1,26 @@
+import threading
+
 import scipy. interpolate
 from lvl import *
 import pygame
 from pygame import sprite, Surface, Color, Rect
 from main import *
-import pyganim
 import os
 from monsters import *
 import lvl
 
 
-walkRight = [pygame.image.load('sprite/право1.png'), pygame.image.load('sprite/право2.png'),
-             pygame.image.load('sprite/право3.png'),pygame.image.load('sprite/право4.png'),
-             pygame.image.load('sprite/право5.png'),pygame.image.load('sprite/право6.png'),
-             pygame.image.load('sprite/право7.png'),pygame.image.load('sprite/право8.png')]
+walkRight = [pygame.image.load('sprite/ПРАВОД1.png'), pygame.image.load('sprite/ПРАВОД2.png'),
+             pygame.image.load('sprite/ПРАВОД3.png'),pygame.image.load('sprite/ПРАВОД4.png'),
+             pygame.image.load('sprite/ПРАВОД5.png'),pygame.image.load('sprite/ПРАВОД6.png'),
+             pygame.image.load('sprite/ПРАВОД7.png'),pygame.image.load('sprite/ПРАВОД8.png')]
 
-walkLeft = [pygame.image.load('sprite/лево1.png'), pygame.image.load('sprite/лево2.png'),
-            pygame.image.load('sprite/лево3.png'),pygame.image.load('sprite/лево4.png'),
-            pygame.image.load('sprite/лево5.png'),pygame.image.load('sprite/лево6.png'),
-            pygame.image.load('sprite/лево7.png'),pygame.image.load('sprite/лево8.png')]
-charimageLeft = pygame.image.load('sprite/лево1.png')
-charimageRight = pygame.image.load('sprite/право1.png')
+walkLeft = [pygame.image.load('sprite/ЛЕВОД1.png'), pygame.image.load('sprite/ЛЕВОД2.png'),
+            pygame.image.load('sprite/ЛЕВОД3.png'),pygame.image.load('sprite/ЛЕВОД4.png'),
+            pygame.image.load('sprite/ЛЕВОД5.png'),pygame.image.load('sprite/ЛЕВОД6.png'),
+            pygame.image.load('sprite/ЛЕВОД7.png'),pygame.image.load('sprite/ЛЕВОД8.png')]
+charimageLeft = pygame.image.load('sprite/ЛЕВОД1.png')
+charimageRight = pygame.image.load('sprite/ПРАВОД1.png')
 MOVE_SPEED = 3
 MOVE_EXTRA_SPEED = 2.5
 WIDTH = 38
@@ -35,7 +36,7 @@ animCount = 0
 
 
 
-class Player(sprite.Sprite):
+class playerDino(sprite.Sprite):
     def __init__(self, x, y):
         sprite.Sprite.__init__(self)
         self.winner = False
@@ -55,7 +56,6 @@ class Player(sprite.Sprite):
         self.MovingLeft = False
         self.MovingRight = False
         self.Jump = False
-
 
     def update(self, left, right, up, running, platforms):
 
@@ -118,7 +118,7 @@ class Player(sprite.Sprite):
     def collide(self, xvel, yvel, platforms):
         for p in platforms:
             if sprite.collide_rect(self, p):
-                if isinstance(p, BlockDie): #or isinstance(p, Monster):
+                if isinstance(p, BlockDie):
                     self.die()
                 elif isinstance(p, BlockTeleport):
                     self.teleporting(p.goX, p.goY)
@@ -179,7 +179,7 @@ class Player(sprite.Sprite):
         time.wait(1000)
         self.teleporting(self.startX, self.startY)
 
-    def interpolate_coordinates(self,PrevX, PrevY ,NextX, NextY, previous_timestamp, next_timestamp):
+    def interpolate_coordinates(self, PrevX, PrevY, NextX, NextY, previous_timestamp, next_timestamp):
         x = [float(PrevX), float(NextX)]
         y = [float(PrevY), float(NextY)]
         t = [float(previous_timestamp), float(next_timestamp)]
@@ -188,6 +188,9 @@ class Player(sprite.Sprite):
         y_interp = scipy.interpolate.interp1d(t, y)
         while (prevTime <= float(next_timestamp)):
             self.SetPos(float(x_interp(prevTime)), float(y_interp(prevTime)))
-            prevTime += (float(next_timestamp)-float(previous_timestamp))/60
-        self.SetPos(float(NextX),float(NextY))
+            prevTime += (float(next_timestamp) - float(previous_timestamp)) / 5
+            time.wait(int((float(next_timestamp) - float(previous_timestamp)) /5))
+        self.SetPos(float(NextX), float(NextY))
 
+    def StartInter(self, PrevX, PrevY, NextX, NextY, previous_timestamp, next_timestamp):
+        threading.Thread(target=self.interpolate_coordinates, args=(PrevX, PrevY, NextX, NextY, previous_timestamp, next_timestamp, )).start()

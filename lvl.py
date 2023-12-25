@@ -1,6 +1,5 @@
 from pygame import *
 import os
-import pyganim
 from monsters import *
 
 PLATFORM_WIDTH = 64

@@ -1,9 +1,3 @@
-#from pygame import *
-#import pyganim
-#import os
-#
-#MONSTER_WIDTH = 32
-#MONSTER_HEIGHT = 32
 #MONSTER_COLOR = "#2110FF"
 #
 #

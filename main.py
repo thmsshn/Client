@@ -1,30 +1,45 @@
 import datetime
 import socket
 import threading
+
 import pygame
 from pygame import *
 from pygame.time import Clock
 from Client import UDPClient
 import time
 from time import sleep
-from player import *
+from playerCat import *
 from lvl import *
 from monsters import *
 import sys
+from playerDino import playerDino
+from playerDino import *
+from Client import *
+from lvl import *
 
 WIN_WIDTH = 800
 WIN_HEIGHT = 640
 DISPLAY = (WIN_WIDTH, WIN_HEIGHT)
 BACKGROUND_COLOR = "#89f571"
 
+pygame.mixer.init()
+soundtrack = pygame.mixer.Sound("levels/48bb90af8e1e401.mp3")
+soundtrack.play(loops=-1)
+
 
 class GameState:
-    def __init__(self, ts, Pl1X, Pl1Y, Pl2X, Pl2Y):
+    def __init__(self, ts, Pl1X, Pl1Y, Pl2X, Pl2Y, LastReq):
         self.TimeStamp = ts
         self.Pl1X = Pl1X
         self.Pl1Y = Pl1Y
         self.Pl2X = Pl2X
         self.Pl2Y = Pl2Y
+        self.LastReq = LastReq
+
+
+import time
+
+prevGS = GameState(time.time(), 100, 100, 100, 100, 0)
 
 
 class Camera(object):
@@ -75,25 +90,53 @@ def loadLevel():
                     platforms.append(tp)
 
 
-#                if commands[0] == "monster":
-#                    mn = Monster(int(commands[1]), int(commands[2]), int(commands[3]), int(commands[4]),
-#                                 int(commands[5]), int(commands[6]))
-#                    entities.add(mn)
-#                    platforms.append(mn)
-#                    Monster.add(mn)
+def FirstConnection(client, socket, entities):
+    F = True
+    while F:
+        client.udp_echo_client_send_firstMessage()
+        data, client_address = socket.recvfrom(1024)
+        message = data.decode('utf-8')
+        if (message == 'cat'):
+            hero = playerCat(100, 100)
+            hero2 = playerDino(100, 100)
+            F = False
+        if (message == 'dino'):
+            hero = playerDino(100, 100)
+            hero2 = playerCat(100, 100)
+            F = False
+    entities.add(hero)
+    entities.add(hero2)
+    import time
+
+    threading.Thread(target=Receiver, args=(hero, hero2, socket)).start()
+    return entities, hero, hero2
 
 
-def Receiver(hero1, client_socket, prevGS):
+def Receiver(hero, hero1, client_socket):
+    global prevGS
     while True:
         data, client_address = client_socket.recvfrom(1024)
         message = data.decode('utf-8')
         W = message.split(" ")
-        print(message)
-        Gs = GameState(W[1], W[2], W[3], W[4], W[5])
+
+        if (len(message) < 3):
+            continue
+        Gs = GameState(W[1], W[2], W[3], W[4], W[5], W[6])
+        if W[7] == 'True':
+            print('winner!')
+            font = pygame.font.Font(None, 36)
+            text = font.render("Победитель", True, (255, 255, 255))
+            text_rect = text.get_rect(center=(400, 100))
         if int(W[0]) == 0:
-            hero1.interpolate_coordinates(prevGS.Pl2X, prevGS.Pl2Y, Gs.Pl2X, Gs.Pl2Y, prevGS.TimeStamp, Gs.TimeStamp)
+            # hero1.interpolate_coordinates(prevGS.Pl2X, prevGS.Pl2Y, Gs.Pl2X, Gs.Pl2Y, prevGS.TimeStamp,
+            hero1.StartInter(prevGS.Pl2X, prevGS.Pl2Y, Gs.Pl2X, Gs.Pl2Y, prevGS.TimeStamp, Gs.TimeStamp)
+            #                                  Gs.TimeStamp)
+            hero.interpolate_coordinates(prevGS.Pl1X, prevGS.Pl1Y, Gs.Pl1X, Gs.Pl1Y, prevGS.TimeStamp, Gs.TimeStamp)
         else:
-            hero1.interpolate_coordinates(prevGS.Pl1X, prevGS.Pl1Y, Gs.Pl1X, Gs.Pl1Y, prevGS.TimeStamp, Gs.TimeStamp)
+            hero1.interpolate_coordinates(prevGS.Pl1X, prevGS.Pl1Y, Gs.Pl1X, Gs.Pl1Y, prevGS.TimeStamp,
+                                          Gs.TimeStamp)
+            hero.StartInter(prevGS.Pl2X, prevGS.Pl2Y, Gs.Pl2X, Gs.Pl2Y, prevGS.TimeStamp, Gs.TimeStamp)
+            # hero.interpolate_coordinates(prevGS.Pl2X, prevGS.Pl2Y, Gs.Pl2X, Gs.Pl2Y, prevGS.TimeStamp, Gs.TimeStamp)
         prevGS = Gs
 
 
@@ -107,36 +150,25 @@ def main(screen, weight, height):
     bg = Surface((WIN_WIDTH, WIN_HEIGHT))
     bg.fill(Color(BACKGROUND_COLOR))
 
-    hero = Player(100, 100)
-    hero2 = Player(100, 100)
-    import time
-    prevGS = GameState(time.time(), hero.rect.x, hero.rect.y, hero2.rect.x, hero2.rect.y)
     left = right = False
     up = False
     running = False
     animCount = 0
-    server_host = "127.0.0.1"
+    server_host = "188.120.237.31"
     server_port = 12345
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    client_socket.bind(("0.0.0.0", 50003))
+    client_socket.bind(("0.0.0.0", 0))
     Client = UDPClient(server_host, server_port, client_socket)
 
     entities = pygame.sprite.Group()
     platforms = []
+    tp = [BlockTeleport(162, 1038, 144, 1230), BlockTeleport(2365, 1808, 714, 144), BlockTeleport(660, 1296, 653, 1680),
+          BlockTeleport(970, 912, 2195, 1552)]
+    for i in range(4):
+        entities.add(tp[i])
+        platforms.append(tp[i])
+        animatedEntities.add(tp[i])
 
-    tp = BlockTeleport(162, 1038, 144, 1230)
-    entities.add(tp)
-    platforms.append(tp)
-    animatedEntities.add(tp)
-
-    #    mn = Monster(300, 600, 2, 3, 200, 560)
-
-    #   entities.add(mn)
-    #   platforms.append(mn)
-    #   monsters.add(mn)
-
-    entities.add(hero)
-    entities.add(hero2)
     frame_timer = 0
 
     x = y = 0
@@ -165,11 +197,12 @@ def main(screen, weight, height):
 
     camera = Camera(camera_configure, total_level_width, total_level_height)
 
-    threading.Thread(target=Receiver, args=(hero2, client_socket, prevGS)).start()
+    PredictPos = []
 
     timer = pygame.time.Clock()
-    while 1:
+    entities, hero, hero2 = FirstConnection(Client, client_socket, entities)
 
+    while 1:
         for e in pygame.event.get():
             if e.type == QUIT:
                 raise SystemExit("QUIT")
@@ -199,14 +232,24 @@ def main(screen, weight, height):
                 running = False
         timer.tick(60)
         frame_timer += 1
+        #print(hero.rect.x," ",hero.rect.y)
         win.blit(bi, (0, 0))
+
         camera.update(hero)
-        hero.update(left, right, up, running, platforms)
+        # hero.update(left, right, up, running, platforms)
+        # PredictPos.append(str(hero.rect.x)+" "+str(hero.rect.y))
         ListInp = str(left) + " " + str(right) + " " + str(up) + " " + str(running)
+        #  print(prevGS.Pl1X," ",prevGS.Pl1Y," ",PredictPos[int(prevGS.LastReq)])
         Client.udp_echo_client_send(ListInp)
         for e in entities:
             win.blit(e.image, camera.apply(e))
         pygame.display.update()
+        # cpu_percent = psutil.cpu_percent(interval=1)  # интервал в секундах
+        # print(f"Использование процессора: {cpu_percent}%")
+        # memory_info = psutil.Process().memory_info()
+        # Количество использованной памяти
+        # used_memory = memory_info.rss
+        # print(f"Использованная память: {used_memory} байт")
 
 
 level = []
@@ -265,8 +308,8 @@ class Button:
 
 
 def main_menu(green_button, screen, screen_weight, red_button, screen_height):
-    interimage = pygame.image.load('ZastaVka.jpg').convert_alpha()
-    interimage = pygame.transform.scale(interimage,[screen_weight,screen_height])
+    interimage = pygame.image.load('sprite/Sprite-0002.png').convert_alpha()
+    interimage = pygame.transform.scale(interimage, [screen_weight, screen_height])
     interimageRect = interimage.get_rect()
 
     running = True
@@ -301,10 +344,10 @@ def start():
     screen_weight, screen_height = 800, 640  # размер окна приложения
     screen = pygame.display.set_mode([screen_weight, screen_height])  # создание окна приложения
     pygame.display.set_caption("babushka")  # название окна приложенния
-    green_button = Button(screen_weight / 2 - (150 / 2), 320, button_weight, button_height, 'play', 'sprite/лево1.png',
-                          'sprite/право1.png')
+    green_button = Button(screen_weight / 2 - (150 / 2), 340, button_weight, button_height, '', 'sprite/мордаК1.1.png',
+                          'sprite/мордаК1.2.png')
     red_button = Button(screen_weight / 2 - (150 / 2), (green_button.y + green_button.height), button_weight,
-                        button_height, 'Exit', 'sprite/ППД1.png', 'sprite/ПЛД1.png')
+                        button_height, '', 'sprite/мордад1.png', 'sprite/мордад2.png')
     main_menu(green_button, screen, screen_weight, red_button, screen_height)
 
 

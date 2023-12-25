@@ -1,7 +1,7 @@
 import pygame
 import sys
 import socket
-from player import Player
+from playerCat import Player
 import pygamegui
 
 
@@ -70,7 +70,7 @@ def host_con(screen, screen_weight, screen_height):  # меню хоста
         pygame.display.flip()
         screen.fill((0, 0, 0))
         font = pygame.font.Font(None, 72)
-        text_surface = font.render("CS_2D", True, [255, 255, 255])
+        text_surface = font.render("babushka", True, [255, 255, 255])
         text_rect = text_surface.get_rect(center=(screen_weight / 2, 50))
         screen.blit(text_surface, text_rect)
 
@@ -103,7 +103,7 @@ def main_menu(green_button, screen, screen_weight, red_button, screen_height):
     while running:
         screen.fill((0, 0, 0))
         font = pygame.font.Font(None, 72)
-        text_surface = font.render("CS_2D", True, [255, 255, 255])
+        text_surface = font.render("babushka", True, [255, 255, 255])
         text_rect = text_surface.get_rect(center=(screen_weight/2, 50))
         screen.blit(text_surface, text_rect)
 
